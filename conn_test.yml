@@ -1,8 +1,8 @@
-- name: tests connection only
+- name: tests connection only, tries every 20 seconds for 5 minutes
   hosts: all
   gather_facts: no
   tasks:
-   - name: testing connection
+   - name: beginning testing connection
      wait_for_connection:
         delay: 1
         sleep: 20
