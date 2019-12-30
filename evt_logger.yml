@@ -14,8 +14,21 @@
         msg: "Repeated Alerts requiring investigation"
      when: count.stdout|int >=2
 
-   - name: beginning testing connection
-     wait_for_connection:
-        delay: 1
-        sleep: 20
-        timeout: 300
+
+   - block:
+     - name: Log the event Start
+       win_shell: |
+         if(! (get-eventLog -list | Where-Object {$_.logdisplayname -eq "AAAS"})){
+         new-eventlog -logname AAAS -Source "AAAS Events"
+         limit-eventlog -logname AAAS -OverflowAction OverwriteOlder -MaximumSize 1024KB
+         Write-EventLog -LogName AAAS -source "AAAS Events" -EventID 1234 -EntryType Information -Message "Started Microservice XYZ"
+         }
+         else{
+         Write-EventLog -LogName AAAS -source "AAAS Events" -EventID 1234 -EntryType Information -Message "Started Microservice XYZ"
+         }
+
+     - name: beginning testing connection
+       wait_for_connection:
+          delay: 1
+          sleep: 20
+          timeout: 300
