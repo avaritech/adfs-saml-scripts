@@ -1,0 +1,43 @@
+- name: Logs Events
+  hosts: all
+  gather_facts: no
+  tasks:
+
+#example running with arguments: ansible-playbook evtWriter.yml --extra-vars "logName=b logID=1 checkRepeats=yes repeatCount=3 timeRange=20"
+
+#required: logName, logID
+#----------------------block
+#if checkRepeats
+#repeatCount int
+#timeRange(minutes) int
+   - name: Repeated Log Entry Check
+     block:
+       - name: Check EVTLog for repeat offenders
+         win_shell: |
+          if(get-eventLog -list | Where-Object {$_.logdisplayname -eq '{{ logName }}'}){
+          $Events = get-eventlog '{{ logName }}' -after (get-date).AddMinutes(-'{{ timeRange }}')
+          $count = [regex]::Matches($Events.InstanceID, '{{ logID }}').Count
+          $count
+          }
+         register: count
+         ignore_errors: true
+       #- debug:
+      #     var: count
+       - name: Fail based on count
+         fail:
+           msg: "Repeated Alerts requiring investigation, {{count.stdout|int}} total vs {{repeatCount}} max instances of ID {{logID}} in {{timeRange}} minutes"
+         when: count.stdout|int >= repeatCount|int
+     when: (checkRepeats is defined) and (repeatCount is defined) and (timeRange is defined)
+
+#----------------------block
+
+   - name: Log the event Start
+     win_shell: |
+        if(! (get-eventLog -list | Where-Object {$_.logdisplayname -eq '{{ logName }}'})){
+        new-eventlog -logname '{{ logName }}' -Source "{{ logName }} Events"
+        limit-eventlog -logname '{{ logName }}' -OverflowAction OverwriteOlder -MaximumSize 1024KB
+        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message "Started Microservice XYZ"
+        }
+        else{
+        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message "Started Microservice XYZ"
+        }
