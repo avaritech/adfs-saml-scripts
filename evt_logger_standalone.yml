@@ -3,13 +3,11 @@
   gather_facts: no
   tasks:
 
-#example running with arguments: ansible-playbook evtWriter.yml --extra-vars "logName=b logID=1 checkRepeats=yes repeatCount=3 timeRange=20"
-
-#required: logName, logID
+#required: logName[str],logID[int<65535],message[str]
+#optional: checkRepeats[bool],repeatCount[int],timeRange(minutes)[int]
+#example: ansible-playbook evtWriter.yml --extra-vars "logName=b logID=24 checkRepeats=yes repeatCount=44 timeRange=34 message='This is my message, test'"
 #----------------------block
-#if checkRepeats
-#repeatCount int
-#timeRange(minutes) int
+#if checkRepeats TRUE AND repeatCount int and timeRange int
    - name: Repeated Log Entry Check
      block:
        - name: Check EVTLog for repeat offenders
@@ -21,23 +19,24 @@
           }
          register: count
          ignore_errors: true
-       #- debug:
-      #     var: count
+
        - name: Fail based on count
          fail:
            msg: "Repeated Alerts requiring investigation, {{count.stdout|int}} total vs {{repeatCount}} max instances of ID {{logID}} in {{timeRange}} minutes"
          when: count.stdout|int >= repeatCount|int
      when: (checkRepeats is defined) and (repeatCount is defined) and (timeRange is defined)
 
-#----------------------block
+#----------------------EndBlock
 
    - name: Log the event Start
      win_shell: |
         if(! (get-eventLog -list | Where-Object {$_.logdisplayname -eq '{{ logName }}'})){
         new-eventlog -logname '{{ logName }}' -Source "{{ logName }} Events"
         limit-eventlog -logname '{{ logName }}' -OverflowAction OverwriteOlder -MaximumSize 1024KB
-        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message "Started Microservice XYZ"
+        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message '{{ message }}'
         }
         else{
-        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message "Started Microservice XYZ"
+        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message '{{ message }}'
         }
+
+~
