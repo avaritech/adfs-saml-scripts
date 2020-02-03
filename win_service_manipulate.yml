@@ -1,0 +1,57 @@
+- name: Manipulates a service, logs and optionally checks for repeat calling
+  hosts: all
+  gather_facts: no
+  vars:
+     logName: log
+     logID: 4444
+     message: Restarting splunkForwarder service
+     checkRepeats: true
+     repeatCount: 40
+     timeRange: 10
+     service: splunkForwarder
+     serviceState: restarted
+  tasks:
+#required: service, serviceState
+#required: logName[str],logID[int<65535],message[str]
+#optional: checkRepeats[bool],repeatCount[int],timeRange(minutes)[int]
+#----------------------block
+#if checkRepeats TRUE AND repeatCount int and timeRange int
+   - name: Repeated Log Entry Check
+     block:
+       - name: Check EVTLog for repeat offenders
+         win_shell: |
+          if(get-eventLog -list | Where-Object {$_.logdisplayname -eq '{{ logName }}'}){
+          $Events = get-eventlog '{{ logName }}' -after (get-date).AddMinutes(-'{{ timeRange }}')
+          $count = [regex]::Matches($Events.InstanceID, '{{ logID }}').Count
+          $count
+          }
+         register: count
+         ignore_errors: true
+
+       - name: Fail based on count
+         fail:
+           msg: "Repeated Alerts requiring investigation, {{count.stdout|int}} total vs {{repeatCount}} max instances of ID {{logID}} in {{timeRange}} minutes"
+         when: count.stdout|int >= repeatCount|int
+     when: (checkRepeats is defined) and (repeatCount is defined) and (timeRange is defined) and 'true' in checkRepeats|lower
+
+#----------------------EndBlock
+
+   - name: Log the event Start
+     win_shell: |
+        if(! (get-eventLog -list | Where-Object {$_.logdisplayname -eq '{{ logName }}'})){
+        new-eventlog -logname '{{ logName }}' -Source "{{ logName }} Events"
+        limit-eventlog -logname '{{ logName }}' -OverflowAction OverwriteOlder -MaximumSize 1024KB
+        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message '{{ message }}'
+        }
+        else{
+        Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message '{{ message }}'
+        }
+
+   - name: Restart a service
+     win_service:
+       name: "{{ service }}"
+       state: "{{ serviceState }}"
+     register: task_result
+     until: task_result.stderr is not defined
+     retries: 2
+     delay: 10
