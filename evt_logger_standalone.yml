@@ -5,7 +5,6 @@
 
 #required: logName[str],logID[int<65535],message[str]
 #optional: checkRepeats[bool],repeatCount[int],timeRange(minutes)[int]
-#example: ansible-playbook evtWriter.yml --extra-vars "logName=b logID=24 checkRepeats=yes repeatCount=44 timeRange=34 message='This is my message, test'"
 #----------------------block
 #if checkRepeats TRUE AND repeatCount int and timeRange int
    - name: Repeated Log Entry Check
@@ -24,7 +23,7 @@
          fail:
            msg: "Repeated Alerts requiring investigation, {{count.stdout|int}} total vs {{repeatCount}} max instances of ID {{logID}} in {{timeRange}} minutes"
          when: count.stdout|int >= repeatCount|int
-     when: (checkRepeats is defined) and (repeatCount is defined) and (timeRange is defined)
+     when: (checkRepeats is defined) and (repeatCount is defined) and (timeRange is defined) and 'true' in checkRepeats|lower
 
 #----------------------EndBlock
 
@@ -39,4 +38,8 @@
         Write-EventLog -LogName '{{ logName }}' -source "{{ logName }} Events" -EventID '{{ logID }}' -EntryType Information -Message '{{ message }}'
         }
 
+~
+~
+~
+~
 ~
