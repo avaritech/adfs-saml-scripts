@@ -1,5 +1,5 @@
 ﻿$preStr = "https://ipfs.io/ipfs/bafykbzaced4xstofs4tc5q4irede6uzaz3qzcdvcb2eedxgfakzwdyjnxgohq/"
-$downloadDir = "T:\CN-investigation\"
+$downloadDir = "T:\CN-investigation\pdfs\"
 $allLines = gc linesEnding
 
 add-type @"
@@ -22,8 +22,9 @@ $i=0
 foreach($line in $allLines){
 $i++
     $compiledString = $preStr + $line
-    $compiledString 
-    
-    Invoke-WebRequest $compiledString -outFile "$downloadDir$i.pdf"
+    #$compiledString 
+    $pdfName = $line.substring(5)
+    $pdfName
+    Invoke-WebRequest $compiledString -outFile "$downloadDir$pdfName"
 
 }

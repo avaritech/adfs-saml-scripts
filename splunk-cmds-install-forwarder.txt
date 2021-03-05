@@ -1,0 +1,8 @@
+-------------------------------------------------
+msiexec.exe /x splunkforwarder-8.0.5-a1a6394cc5ae-x64-release.msi /quiet
+-----------------------------------------------------------------------
+
+INSTALL
+----------------------------------------------------
+msiexec.exe /i splunkforwarder-8.0.5-a1a6394cc5ae-x64-release.msi DEPLOYMENT_SERVER="{server}.compute-1.amazonaws.com:8089" AGREETOLICENSE=YES /quiet
+-------------------------------------------------------------
