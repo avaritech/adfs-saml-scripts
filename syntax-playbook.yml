@@ -5,10 +5,17 @@
   - name: execute script
     script: script1.ps1
     register: copyDir
-
-  - name: call script if callTemp is defined
-    meta: end_play
+  - meta: end_play
     when: callTemp is defined
+
+
+#  - name: call script if callTemp is defined
+#    win_copy:
+#      src: asd.txt
+#      dest: "{{ copyDir.stdout_lines[0]  | replace('\\t\\t', '\\t') }}"
+
+#  - meta: end_play
+#    when: callTemp is defined
 
 
   - name: copy file to remote
