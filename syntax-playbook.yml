@@ -1,0 +1,24 @@
+- hosts: all
+  #remote_user: root
+  gather_facts: no
+  tasks:
+  - name: execute script
+    script: script1.ps1
+    register: copyDir
+
+  - name: call script if callTemp is defined
+    meta: end_play
+    when: callTemp is defined
+
+
+  - name: copy file to remote
+    win_copy:
+      src: asd.txt
+      dest: "{{ copyDir.stdout_lines[0]  | replace('\\t\\t', '\\t') }}"
+
+
+  - name: execute Install Script
+    vars:
+      fileDir: "{{ copyDir.stdout_lines[0]  | replace('\\t\\t', '\\t') }}"
+
+    script: script2.ps1 -fileLocation "{{fileDir + installFile}}"
